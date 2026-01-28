@@ -443,7 +443,7 @@ function spawnEnemy(level, speedOverride) {
     
     // 基础数值
     const baseHp = 15 * level;
-    const baseSpeed = 0.35 + level * 0.05; // 进一步提高基础速度
+    const baseSpeed = 0.6 + level * 0.1; // 再次大幅提高基础速度，适配手机
     
     const speedValue = (typeof speedOverride === 'number') ? speedOverride : (baseSpeed * config.speedMod);
     enemies.push({
@@ -473,7 +473,7 @@ function spawnBoss() {
     enemy.style.top = '-60px';
     board.appendChild(enemy);
     const baseHp = 15 * 3;
-    const baseSpeed = 0.35 + 3 * 0.05;
+    const baseSpeed = 0.6 + 3 * 0.1;
     const hp = baseHp * 10;
     const speed = baseSpeed * 0.4; // Boss稍微快一点
     bossEnemy = {
@@ -604,6 +604,10 @@ function invokeHelp() {
     clearAllEnemies();
     infiniteHearts = true;
     updatePoints(0);
+    
+    // 确保游戏状态为活跃
+    gameActive = true; 
+    
     const overlay = document.getElementById('buff-overlay');
     if (overlay) overlay.style.display = 'block';
     const btn = document.getElementById('help-btn');
@@ -736,8 +740,16 @@ function gameLoop() {
 
         // 游戏结束判定：到达底部 -> 触发老公救场
         if (e.y > board.offsetHeight - 20) {
-            invokeHelp();
-            return;
+            if (infiniteHearts) {
+                // 无限模式下，怪到底部直接移除（被老公拦截），不重复触发救场
+                createParticle(e.x + 25, e.y + 25, '❤️');
+                e.el.remove();
+                enemies.splice(i, 1);
+                continue; // 继续处理下一个怪
+            } else {
+                invokeHelp();
+                return; // 触发救场会清空所有怪，直接结束本帧
+            }
         }
         
         // 死亡判定
