@@ -684,9 +684,9 @@ function gameLoop() {
             }
         }
 
-        // 游戏结束判定：到达底部
+        // 游戏结束判定：到达底部 -> 触发老公救场
         if (e.y > board.offsetHeight - 20) {
-            gameOver();
+            invokeHelp();
             return;
         }
         
@@ -774,6 +774,7 @@ function gameLoop() {
 // 全局胜利检查器
 setInterval(() => {
     if (!gameActive) return;
+    if (infiniteHearts) return; // 无限火力模式下不进行常规胜利判定
 
     // 只有当不生成怪了，且场上没怪了，才算波次/游戏结束
     if (!isSpawning && enemies.length === 0) {
