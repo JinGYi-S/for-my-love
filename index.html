@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>致最爱的司恬</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+    
+    <!-- 1. 初始界面 -->
+    <button class="start-btn" onclick="startRomance()">点击开启惊喜</button>
+
+    <!-- 音频 -->
+    <audio id="bgm" loop>
+        <source src="https://music.163.com/song/media/outer/url?id=1824045025.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 2. 浪漫展示界面 -->
+    <div class="container" id="romance-layer">
+        <div class="romance-content">
+            <div class="heart-wrapper" onclick="clickHeart(event)">
+                <div class="heart-shape"></div>
+            </div>
+            
+            <div class="timer" id="timer">
+                我们相爱已经：<br>
+                <span id="time-count"></span>
+            </div>
+
+            <div class="typewriter" id="typewriter"></div>
+            
+            <!-- 游戏入口按钮，初始隐藏 -->
+            <button id="enter-game-btn" class="game-btn" style="display:none; margin-top:30px;" onclick="startGame()">
+                🎮 开启爱心保卫战
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. 游戏界面 -->
+    <div id="game-layer">
+        <div class="game-header">
+            <div class="resource-bar">❤️ <span id="love-points">100</span></div>
+            <div style="color: #fff;">波次: <span id="wave-info">1/3</span></div>
+            <button id="help-btn" class="help-btn" style="display:none;">求老公帮助</button>
+        </div>
+        
+        <div class="game-board" id="game-board">
+            <!-- 动态生成网格 -->
+            <div class="guide-overlay" id="guide">
+                <h3 style="color:#ff6b8b; font-size:24px;">爱心保卫战</h3>
+                <p style="color:#fff; line-height:1.5;">
+                    1. 点击底部卡片选择植物<br>
+                    2. 点击格子放置防御塔<br>
+                    3. 收集爱心❤️获取资源<br>
+                    4. 阻止烦恼👾入侵！
+                </p>
+            </div>
+        </div>
+        <div id="buff-overlay" style="display:none;"></div>
+        
+        <div class="plant-bar">
+            <div class="plant-card" onclick="selectPlant('shooter', 50)" id="card-shooter">
+                <div style="font-size:24px">🏹</div>
+                <div class="cost-tag">50</div>
+            </div>
+            <div class="plant-card" onclick="selectPlant('ice', 75)" id="card-ice">
+                <div style="font-size:24px">🍦</div>
+                <div class="cost-tag">75</div>
+            </div>
+            <div class="plant-card" onclick="selectPlant('wall', 50)" id="card-wall">
+                <div style="font-size:24px">🛡️</div>
+                <div class="cost-tag">50</div>
+            </div>
+             <div class="plant-card" onclick="selectPlant('bomb', 100)" id="card-bomb">
+                <div style="font-size:24px">💣</div>
+                <div class="cost-tag">100</div>
+            </div>
+        </div>
+        
+        <!-- 胜利/失败 弹窗 -->
+        <div class="modal" id="game-modal">
+            <h2 id="modal-title">胜利!</h2>
+            <p id="modal-msg" style="color:white; padding: 0 20px; text-align: center;">你成功守护了我们的爱！</p>
+            <button class="game-btn" onclick="location.reload()">再玩一次</button>
+        </div>
+    </div>
+
+    <script src="static/js/game.js"></script>
+</body>
+</html>

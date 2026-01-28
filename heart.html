@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>致最爱的司恬</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Noto+Serif+SC:wght@500&display=swap');
+
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background-color: #000; 
+            overflow: hidden; 
+            font-family: 'Noto Serif SC', serif;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            user-select: none;
+            touch-action: none; /* 防止移动端滚动 */
+        }
+
+        /* 星空背景 */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* 通用容器 */
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+        }
+
+        /* 启动按钮 */
+        .start-btn, .game-btn {
+            padding: 15px 40px;
+            background: linear-gradient(45deg, #ff6b8b, #ff8e53);
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 107, 139, 0.6);
+            animation: pulse-btn 2s infinite;
+            z-index: 20;
+            margin-top: 20px;
+        }
+
+        @keyframes pulse-btn {
+            0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 107, 139, 0.6); }
+            50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 107, 139, 0.8); }
+            100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 107, 139, 0.6); }
+        }
+
+        /* 浪漫环节内容 */
+        .romance-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 15;
+        }
+
+        /* 大爱心 */
+        .heart-wrapper {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            animation: beat 1.2s infinite;
+            cursor: pointer;
+        }
+        
+        .heart-shape {
+            position: absolute;
+            top: 0; left: 50px; width: 50px; height: 80px;
+            background: #ff3366;
+            border-radius: 50px 50px 0 0;
+            transform: rotate(-45deg); transform-origin: 0 100%;
+            box-shadow: 0 0 40px #ff3366;
+        }
+        .heart-shape:after {
+            content: ""; position: absolute; top: 0; left: 0; width: 50px; height: 80px;
+            background: #ff3366; border-radius: 50px 50px 0 0;
+            transform: rotate(90deg); transform-origin: 0 100%;
+        }
+
+        @keyframes beat {
+            0%, 28%, 70% { transform: scale(1); }
+            14%, 42% { transform: scale(1.3); }
+        }
+
+        .timer { font-size: 18px; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .timer b { font-size: 24px; color: #ff6b8b; font-family: 'Dancing Script', cursive; }
+        
+        .typewriter {
+            font-size: 18px; line-height: 1.6; min-height: 80px;
+            max-width: 90%; margin: 10px auto;
+            text-shadow: 0 0 5px rgba(255,192,203,0.5);
+        }
+
+        /* --- 游戏相关样式 --- */
+        #game-layer {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 50%, #431228 100%);
+            background-size: 200% 200%;
+            animation: bg-shift 15s ease infinite;
+            z-index: 100;
+            flex-direction: column;
+        }
+
+        @keyframes bg-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .game-header {
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .resource-bar { color: #ffd700; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        
+        .game-board {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            border-top: 2px solid rgba(255,107,139,0.5);
+            border-bottom: 2px solid rgba(255,107,139,0.5);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* 敌人 */
+        .enemy {
+            position: absolute;
+            width: 50px; height: 50px;
+            font-size: 30px;
+            display: flex; justify-content: center; align-items: center;
+            transition: top 0.1s linear;
+            z-index: 102;
+        }
+
+        /* 防御塔 */
+        .tower {
+            position: absolute;
+            width: 100%; height: 100%;
+            font-size: 30px;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 101;
+            animation: bounce 0.5s;
+        }
+
+        /* 子弹 */
+        .bullet {
+            position: absolute;
+            width: 20px; height: 20px;
+            background: #ff3366;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff3366;
+            z-index: 103;
+        }
+
+        /* 网格系统 */
+        .grid-row { display: flex; height: 16.66%; width: 100%; border-bottom: 1px dashed rgba(255,255,255,0.2); }
+        .grid-cell {
+            flex: 1;
+            border-right: 1px dashed rgba(255,255,255,0.2);
+            position: relative;
+            display: flex; justify-content: center; align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            transition: background 0.2s;
+        }
+        /* 棋盘格效果 */
+        .grid-row:nth-child(even) .grid-cell:nth-child(odd),
+        .grid-row:nth-child(odd) .grid-cell:nth-child(even) {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .grid-cell.selected { background: rgba(255, 107, 139, 0.3); }
+
+        /* 底部植物栏 */
+        .plant-bar {
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0,0,0,0.5);
+            padding-bottom: 20px; /* 适配全面屏底部 */
+        }
+
+        .plant-card {
+            width: 60px; height: 70px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            display: flex; flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .plant-card.active { border-color: #ff6b8b; box-shadow: 0 0 15px #ff6b8b; background: rgba(255, 107, 139, 0.2); }
+        .plant-card.disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+        
+        .cost-tag {
+            font-size: 12px; color: #ffd700;
+            margin-top: 2px;
+        }
+
+        /* 掉落资源 */
+        .sun {
+            position: absolute;
+            font-size: 24px;
+            cursor: pointer;
+            animation: float-sun 3s linear infinite;
+            z-index: 105;
+        }
+
+        @keyframes float-sun { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+
+        /* 游戏结束弹窗 */
+        .modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center; align-items: center;
+            z-index: 200;
+        }
+        .modal h2 { font-size: 32px; color: #ff6b8b; margin-bottom: 20px; }
+        
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .guide-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 150;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            text-align: center;
+            padding: 20px;
+            pointer-events: none;
+            animation: fadeOut 1s ease-in-out 3s forwards;
+        }
+        @keyframes fadeOut { to { opacity: 0; pointer-events: none; } }
+    </style>
+</head>
+<body>
+    <canvas id="starfield"></canvas>
+    
+    <!-- 1. 初始界面 -->
+    <button class="start-btn" onclick="startRomance()">点击开启惊喜</button>
+
+    <!-- 音频 -->
+    <audio id="bgm" loop>
+        <source src="https://music.163.com/song/media/outer/url?id=1824045025.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- 2. 浪漫展示界面 -->
+    <div class="container" id="romance-layer">
+        <div class="romance-content">
+            <div class="heart-wrapper" onclick="clickHeart(event)">
+                <div class="heart-shape"></div>
+            </div>
+            
+            <div class="timer" id="timer">
+                我们相爱已经：<br>
+                <span id="time-count"></span>
+            </div>
+
+            <div class="typewriter" id="typewriter"></div>
+            
+            <!-- 游戏入口按钮，初始隐藏 -->
+            <button id="enter-game-btn" class="game-btn" style="display:none; margin-top:30px;" onclick="startGame()">
+                🎮 开启爱心保卫战
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. 游戏界面 -->
+    <div id="game-layer">
+        <div class="game-header">
+            <div class="resource-bar">❤️ <span id="love-points">100</span></div>
+            <div style="color: #fff;">波次: <span id="wave-info">1/3</span></div>
+        </div>
+        
+        <div class="game-board" id="game-board">
+            <!-- 动态生成网格 -->
+            <div class="guide-overlay" id="guide">
+                <h3 style="color:#ff6b8b; font-size:24px;">爱心保卫战</h3>
+                <p style="color:#fff; line-height:1.5;">
+                    1. 点击底部卡片选择植物<br>
+                    2. 点击格子放置防御塔<br>
+                    3. 收集爱心❤️获取资源<br>
+                    4. 阻止烦恼👾入侵！
+                </p>
+            </div>
+        </div>
+        
+        <div class="plant-bar">
+            <div class="plant-card" onclick="selectPlant('shooter', 50)" id="card-shooter">
+                <div style="font-size:24px">🏹</div>
+                <div class="cost-tag">50</div>
+            </div>
+            <div class="plant-card" onclick="selectPlant('ice', 75)" id="card-ice">
+                <div style="font-size:24px">🍦</div>
+                <div class="cost-tag">75</div>
+            </div>
+            <div class="plant-card" onclick="selectPlant('wall', 50)" id="card-wall">
+                <div style="font-size:24px">🛡️</div>
+                <div class="cost-tag">50</div>
+            </div>
+             <div class="plant-card" onclick="selectPlant('bomb', 100)" id="card-bomb">
+                <div style="font-size:24px">💣</div>
+                <div class="cost-tag">100</div>
+            </div>
+        </div>
+        
+        <!-- 胜利/失败 弹窗 -->
+        <div class="modal" id="game-modal">
+            <h2 id="modal-title">胜利!</h2>
+            <p id="modal-msg" style="color:white; padding: 0 20px; text-align: center;">你成功守护了我们的爱！</p>
+            <button class="game-btn" onclick="location.reload()">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 全局配置 ---
+        const START_DATE = new Date("2022-01-11");
+        const LOVE_TEXT = "亲爱的老婆：\n生活中或许会有\n烦恼和小怪兽，\n但我会永远做你的\n专属防御塔，\n守护你的开心与快乐！\n\n准备好一起打败烦恼了吗？";
+        
+        // --- 浪漫环节逻辑 ---
+        function startRomance() {
+            document.querySelector('.start-btn').style.display = 'none';
+            document.getElementById('romance-layer').style.display = 'flex';
+            
+            const audio = document.getElementById('bgm');
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log("Audio play failed", e));
+
+            startTimer();
+            typeWriter(LOVE_TEXT, 0);
+            startFallingHearts();
+        }
+
+        // 计时器
+        function startTimer() {
+            function update() {
+                const now = new Date();
+                const diff = now - START_DATE;
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                document.getElementById('time-count').innerHTML = `<b>${days}</b>天 <b>${hours}</b>时 <b>${minutes}</b>分 <b>${seconds}</b>秒`;
+            }
+            setInterval(update, 1000);
+            update();
+        }
+
+        // 打字机
+        function typeWriter(text, i) {
+            if (i < text.length) {
+                const char = text.charAt(i);
+                document.getElementById('typewriter').innerHTML += char === '\n' ? '<br>' : char;
+                setTimeout(() => typeWriter(text, i + 1), 100);
+            } else {
+                // 打字结束，显示游戏按钮
+                setTimeout(() => {
+                    document.getElementById('enter-game-btn').style.display = 'block';
+                }, 1000);
+            }
+        }
+
+        // 背景特效 (简化版)
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawStars() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = '#fff';
+            for(let i=0; i<100; i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const r = Math.random() * 1.5;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+        drawStars();
+        
+        // 飘落爱心
+        function startFallingHearts() {
+            setInterval(() => {
+                const h = document.createElement('div');
+                h.style.position = 'fixed';
+                h.style.left = Math.random() * 100 + 'vw';
+                h.style.top = '-10px';
+                h.style.color = '#ff6b8b';
+                h.innerHTML = '❤️';
+                h.style.opacity = 0.5;
+                h.style.pointerEvents = 'none';
+                h.style.zIndex = 5;
+                h.style.transition = `top ${Math.random()*3+2}s linear, opacity 1s`;
+                document.body.appendChild(h);
+                setTimeout(() => { h.style.top = '105vh'; h.style.opacity = 0; }, 50);
+                setTimeout(() => h.remove(), 5000);
+            }, 500);
+        }
+
+        // --- 游戏逻辑 (竖屏塔防) ---
+        const ROWS = 6;
+        const COLS = 5;
+        let gameActive = false;
+        let points = 200;
+        let selectedPlantType = null;
+        let grid = []; // 存储格子状态
+        let enemies = [];
+        let bullets = [];
+        let gameLoopId;
+        let enemySpawnTimer;
+        let resourceTimer;
+        let wave = 1;
+        const TOTAL_WAVES = 3;
+        let isSpawning = false;
+
+        function startGame() {
+            document.getElementById('romance-layer').style.display = 'none';
+            document.getElementById('game-layer').style.display = 'flex';
+            initGrid();
+            gameActive = true;
+            updatePoints(0);
+            
+            // 游戏循环
+            gameLoopId = requestAnimationFrame(gameLoop);
+            
+            // 敌人生成
+            startWave(1);
+
+            // 资源自动生成
+            resourceTimer = setInterval(() => {
+                if(!gameActive) return;
+                createSun();
+            }, 5000);
+        }
+
+        function initGrid() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+            grid = [];
+            
+            for(let r=0; r<ROWS; r++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'grid-row';
+                let rowData = [];
+                for(let c=0; c<COLS; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.dataset.r = r;
+                    cell.dataset.c = c;
+                    cell.onclick = () => placePlant(r, c);
+                    rowDiv.appendChild(cell);
+                    rowData.push({ hasPlant: false, el: cell });
+                }
+                board.appendChild(rowDiv);
+                grid.push(rowData);
+            }
+        }
+
+        function selectPlant(type, cost) {
+            if(points < cost) return; // 钱不够
+            
+            // 移除旧选择
+            document.querySelectorAll('.plant-card').forEach(c => c.classList.remove('active'));
+            
+            if (selectedPlantType && selectedPlantType.type === type) {
+                selectedPlantType = null; // 取消选择
+            } else {
+                selectedPlantType = { type, cost };
+                const idMap = { 'shooter': 'card-shooter', 'ice': 'card-ice', 'wall': 'card-wall', 'bomb': 'card-bomb' };
+                document.getElementById(idMap[type]).classList.add('active');
+            }
+        }
+
+        function placePlant(r, c) {
+            if (!selectedPlantType || !gameActive) return;
+            if (grid[r][c].hasPlant) return;
+
+            // 扣费
+            updatePoints(-selectedPlantType.cost);
+            
+            // 放置视觉元素
+            const cell = grid[r][c].el;
+            const plant = document.createElement('div');
+            plant.className = 'tower';
+            
+            if (selectedPlantType.type === 'shooter') {
+                plant.innerHTML = '🏹';
+                grid[r][c].plantObj = { type: 'shooter', hp: 100, lastShot: 0, el: plant };
+            } else if (selectedPlantType.type === 'ice') {
+                plant.innerHTML = '🍦';
+                grid[r][c].plantObj = { type: 'ice', hp: 100, lastShot: 0, el: plant };
+            } else if (selectedPlantType.type === 'wall') {
+                plant.innerHTML = '🛡️';
+                grid[r][c].plantObj = { type: 'wall', hp: 300, el: plant };
+            } else if (selectedPlantType.type === 'bomb') {
+                plant.innerHTML = '💣';
+                cell.appendChild(plant);
+                // 炸弹逻辑：1秒后爆炸
+                setTimeout(() => {
+                    explode(r, c);
+                    cell.innerHTML = '';
+                    grid[r][c].hasPlant = false;
+                }, 1000);
+                grid[r][c].hasPlant = true;
+                
+                // 重置选择
+                selectedPlantType = null;
+                document.querySelectorAll('.plant-card').forEach(c => c.classList.remove('active'));
+                return;
+            }
+
+            cell.appendChild(plant);
+            grid[r][c].hasPlant = true;
+
+            // 重置选择
+            selectedPlantType = null;
+            document.querySelectorAll('.plant-card').forEach(c => c.classList.remove('active'));
+        }
+
+        function explode(r, c) {
+            // 爆炸特效
+            const cell = grid[r][c].el;
+            const boom = document.createElement('div');
+            boom.style.position = 'absolute';
+            boom.style.fontSize = '50px';
+            boom.innerHTML = '💥';
+            boom.style.zIndex = 200;
+            
+            // 震动特效
+            const board = document.getElementById('game-board');
+            board.style.animation = 'shake 0.5s';
+            setTimeout(() => board.style.animation = '', 500);
+
+            // 修正：将爆炸效果添加到 board 而不是 cell，防止 cell 被清空后看不到
+            const rect = cell.getBoundingClientRect();
+            const boardRect = document.getElementById('game-board').getBoundingClientRect();
+            boom.style.left = (rect.left - boardRect.left - 10) + 'px';
+            boom.style.top = (rect.top - boardRect.top - 10) + 'px';
+            document.getElementById('game-board').appendChild(boom);
+            
+            setTimeout(() => boom.remove(), 500);
+
+            // 范围伤害 (3x3)
+            for (let i = r-1; i <= r+1; i++) {
+                for (let j = c-1; j <= c+1; j++) {
+                     // 伤害敌人
+                     for (let k = enemies.length - 1; k >= 0; k--) {
+                        const enemy = enemies[k];
+                        // 简单的网格距离判断
+                        const er = Math.floor(enemy.y / (document.getElementById('game-board').offsetHeight / ROWS));
+                        const ec = Math.floor(enemy.x / (document.getElementById('game-board').offsetWidth / COLS));
+                        
+                        if (Math.abs(er - i) <= 0 && Math.abs(ec - j) <= 0) { // 简单判定：必须在同一个格子里或者非常近
+                             // 实际应该用坐标判断，这里简化为格坐标
+                        }
+                    }
+                }
+            }
+            
+            // 简化版炸弹：直接炸掉全屏敌人（为了爽感）
+            enemies.forEach(e => {
+                e.hp -= 100;
+                createParticle(e.x + 25, e.y + 25, '💥');
+            });
+        }
+
+        function updatePoints(delta) {
+            points += delta;
+            document.getElementById('love-points').innerText = points;
+            // 更新卡片状态
+            checkCardAffordability();
+        }
+
+        function checkCardAffordability() {
+            const costs = { 'card-shooter': 50, 'card-ice': 75, 'card-wall': 50, 'card-bomb': 100 };
+            for(let id in costs) {
+                const el = document.getElementById(id);
+                if(points < costs[id]) el.classList.add('disabled');
+                else el.classList.remove('disabled');
+            }
+        }
+
+        function createSun() {
+            const sun = document.createElement('div');
+            sun.className = 'sun';
+            sun.innerHTML = '💖';
+            const board = document.getElementById('game-board');
+            sun.style.left = Math.random() * (board.offsetWidth - 40) + 'px';
+            sun.style.top = '-40px';
+            
+            board.appendChild(sun);
+            
+            // 阳光下落动画
+            let top = -40;
+            const targetTop = Math.random() * (board.offsetHeight - 100) + 50;
+            
+            const fallInterval = setInterval(() => {
+                top += 2;
+                sun.style.top = top + 'px';
+                if(top >= targetTop) clearInterval(fallInterval);
+            }, 20);
+
+            // 点击收集
+            sun.onclick = function() {
+                updatePoints(25);
+                sun.remove();
+                clearInterval(fallInterval);
+                createParticle(parseFloat(sun.style.left), parseFloat(sun.style.top), '+25');
+            };
+
+            // 10秒后消失
+            setTimeout(() => { if(sun.parentNode) sun.remove(); }, 8000);
+        }
+
+        function startWave(w) {
+            wave = w;
+            document.getElementById('wave-info').innerText = `${wave}/${TOTAL_WAVES}`;
+            isSpawning = true;
+            
+            let count = 5 + wave * 3; // 敌人数量
+            let spawnInterval = 2000 - wave * 300;
+            
+            let spawned = 0;
+            enemySpawnTimer = setInterval(() => {
+                if (!gameActive) return;
+                spawnEnemy(wave);
+                spawned++;
+                if (spawned >= count) {
+                    clearInterval(enemySpawnTimer);
+                    enemySpawnTimer = null;
+                    isSpawning = false;
+                }
+            }, spawnInterval);
+        }
+
+        function spawnEnemy(level) {
+            const board = document.getElementById('game-board');
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy';
+            
+            // 敌人配置
+            const enemyTypes = [
+                { type: 'normal', icon: '👾', hpMod: 1, speedMod: 1 },
+                { type: 'tank', icon: '👿', hpMod: 2.5, speedMod: 0.6 }, // 坦克：血厚慢速
+                { type: 'fast', icon: '🕷️', hpMod: 0.6, speedMod: 1.4 }, // 刺客：血薄快速
+                { type: 'boss', icon: '💢', hpMod: 3, speedMod: 0.8 }    // 精英
+            ];
+            
+            // 随机选择类型 (Boss只在后期出现)
+            let typePool = enemyTypes.slice(0, 2); // 默认普通和坦克
+            if (level >= 2) typePool = enemyTypes.slice(0, 3);
+            if (level >= 3) typePool = enemyTypes;
+            
+            const config = typePool[Math.floor(Math.random() * typePool.length)];
+            
+            enemy.innerHTML = config.icon;
+            
+            // 随机列
+            const col = Math.floor(Math.random() * COLS);
+            const colWidth = board.offsetWidth / COLS;
+            const x = col * colWidth + (colWidth - 50)/2;
+            
+            enemy.style.left = x + 'px';
+            enemy.style.top = '-50px';
+            
+            board.appendChild(enemy);
+            
+            // 基础数值
+            const baseHp = 15 * level;
+            const baseSpeed = 0.3 + level * 0.05; // 整体降速
+            
+            enemies.push({
+                el: enemy,
+                x: x,
+                y: -50,
+                hp: baseHp * config.hpMod,
+                maxHp: baseHp * config.hpMod, // 记录最大血量，未来可做血条
+                speed: baseSpeed * config.speedMod,
+                originalSpeed: baseSpeed * config.speedMod,
+                slowTimer: 0, // 减速计时器
+                col: col,
+                attackCooldown: 0
+            });
+        }
+
+        function checkWinCondition() {
+            const checkInterval = setInterval(() => {
+                if (!gameActive) { clearInterval(checkInterval); return; }
+                if (enemies.length === 0 && !enemySpawnTimer) { // 这里的逻辑有瑕疵，interval清除后变量还在
+                     // 简单判断：如果当前波次怪出完了，且场上没怪了
+                     // 这里为了简化，直接在循环里判断
+                }
+            }, 1000);
+        }
+
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            const board = document.getElementById('game-board');
+            const rowHeight = board.offsetHeight / ROWS;
+            
+            // 1. 移动敌人
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                
+                // 减速逻辑处理
+                let currentSpeed = e.speed;
+                if (e.slowTimer > 0) {
+                    currentSpeed = e.originalSpeed * 0.5;
+                    e.slowTimer--;
+                    e.el.style.filter = 'sepia(1) hue-rotate(180deg) saturate(3)'; // 冰冻变蓝效果
+                } else {
+                    e.el.style.filter = '';
+                }
+
+                e.y += currentSpeed;
+                e.el.style.top = e.y + 'px';
+                
+                // 碰撞检测：是否碰到植物
+                const currentRow = Math.floor((e.y + 40) / rowHeight);
+                
+                if (currentRow >= 0 && currentRow < ROWS) {
+                    const cell = grid[currentRow][e.col];
+                    if (cell.hasPlant) {
+                         // 碰到植物，停止移动，开始攻击
+                         e.y -= currentSpeed; // 抵消移动
+                         e.attackCooldown++;
+                         if (e.attackCooldown > 60) { // 1秒攻击一次
+                             cell.plantObj.hp -= 20;
+                             createParticle(e.x+25, e.y+50, '💥');
+                             e.attackCooldown = 0;
+                             // 植物死亡
+                             if (cell.plantObj.hp <= 0) {
+                                 cell.el.innerHTML = ''; // 移除植物图标
+                                 cell.hasPlant = false;
+                                 cell.plantObj = null;
+                             }
+                         }
+                    }
+                }
+
+                // 游戏结束判定：到达底部
+                if (e.y > board.offsetHeight - 20) {
+                    gameOver();
+                    return;
+                }
+                
+                // 死亡判定
+                if (e.hp <= 0) {
+                    createParticle(e.x + 25, e.y + 25, '✨');
+                    e.el.remove();
+                    enemies.splice(i, 1);
+                }
+            }
+            
+            // 2. 植物攻击
+            const now = Date.now();
+            for (let r=0; r<ROWS; r++) {
+                for (let c=0; c<COLS; c++) {
+                    if (grid[r][c].hasPlant) {
+                        const p = grid[r][c].plantObj;
+                        if (p.type === 'shooter' || p.type === 'ice') {
+                            if (now - p.lastShot > 1000) { // 1秒一发
+                                // 检查该列是否有敌人
+                                const hasEnemy = enemies.some(e => e.col === c && e.y < (r * rowHeight) && e.y > -50);
+                                if (hasEnemy) {
+                                    spawnBullet(r, c, p.type);
+                                    p.lastShot = now;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. 子弹移动
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const b = bullets[i];
+                b.y -= 8; // 子弹速度
+                b.el.style.top = b.y + 'px';
+                
+                // 击中判定
+                let hit = false;
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const e = enemies[j];
+                    // 简单矩形碰撞
+                    if (Math.abs(b.x - e.x) < 30 && Math.abs(b.y - e.y) < 30) {
+                        e.hp -= 10; // 伤害
+                        
+                        // 特殊效果
+                        if (b.type === 'ice') {
+                            e.slowTimer = 180; // 减速3秒 (60fps * 3)
+                            createParticle(e.x+25, e.y+25, '❄️');
+                        } else {
+                            createParticle(e.x+25, e.y+25, '💥');
+                        }
+
+                        e.el.style.transform = 'scale(1.1)';
+                        setTimeout(() => e.el.style.transform = 'scale(1)', 100);
+                        hit = true;
+                        break;
+                    }
+                }
+                
+                if (hit || b.y < -20) {
+                    b.el.remove();
+                    bullets.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 全局胜利检查器
+        setInterval(() => {
+            if (!gameActive) return;
+
+            // 只有当不生成怪了，且场上没怪了，才算波次/游戏结束
+            if (!isSpawning && enemies.length === 0) {
+                if (wave === TOTAL_WAVES) {
+                    // 游戏胜利
+                    if (!window.victoryPending) {
+                         window.victoryPending = true;
+                         setTimeout(() => {
+                             if (enemies.length === 0) gameWin();
+                             else window.victoryPending = false;
+                         }, 2000);
+                    }
+                } else {
+                    // 下一波
+                    if (!window.wavePending) {
+                        window.wavePending = true;
+                        setTimeout(() => {
+                            startWave(wave + 1);
+                            window.wavePending = false;
+                        }, 2000);
+                    }
+                }
+            }
+        }, 1000);
+
+        function spawnBullet(r, c, type) {
+            const board = document.getElementById('game-board');
+            const rowHeight = board.offsetHeight / ROWS;
+            const colWidth = board.offsetWidth / COLS;
+            
+            const b = document.createElement('div');
+            b.className = 'bullet';
+            const x = c * colWidth + colWidth/2 - 10;
+            const y = r * rowHeight + 10;
+            
+            b.style.left = x + 'px';
+            b.style.top = y + 'px';
+            
+            if (type === 'ice') {
+                b.style.background = '#00ffff';
+                b.style.boxShadow = '0 0 10px #00ffff';
+            }
+
+            board.appendChild(b);
+            
+            bullets.push({ el: b, x: x, y: y, type: type });
+        }
+
+        function gameOver() {
+            gameActive = false;
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('modal-title').innerText = "再试一次";
+            document.getElementById('modal-msg').innerText = "生活的小烦恼太多啦，但别放弃，爱能战胜一切！";
+            document.getElementById('game-modal').style.display = 'flex';
+            
+            // 替换重玩按钮逻辑，不再刷新页面
+            const btn = document.querySelector('#game-modal .game-btn');
+            btn.onclick = resetGame;
+            btn.innerText = "重整旗鼓";
+        }
+
+        function resetGame() {
+            // 清理场景
+            document.getElementById('game-modal').style.display = 'none';
+            enemies.forEach(e => e.el.remove());
+            enemies = [];
+            bullets.forEach(b => b.el.remove());
+            bullets = [];
+            document.querySelectorAll('.sun').forEach(s => s.remove());
+            
+            // 重置状态
+            points = 200;
+            wave = 1;
+            isSpawning = false;
+            if(enemySpawnTimer) clearInterval(enemySpawnTimer);
+            if(resourceTimer) clearInterval(resourceTimer);
+            enemySpawnTimer = null;
+            
+            window.victoryPending = false;
+            window.wavePending = false;
+
+            // 重新开始
+            initGrid();
+            gameActive = true;
+            updatePoints(0);
+            gameLoopId = requestAnimationFrame(gameLoop);
+            startWave(1);
+            
+            // 重新启动资源生成
+            resourceTimer = setInterval(() => {
+                if(!gameActive) return;
+                createSun();
+            }, 5000);
+        }
+
+        function gameWin() {
+            gameActive = false;
+            cancelAnimationFrame(gameLoopId);
+            document.getElementById('modal-title').innerText = "守护成功！";
+            document.getElementById('modal-msg').innerText = "你真棒！所有的烦恼都被爱心消灭啦！永远爱你！";
+            document.getElementById('game-modal').style.display = 'flex';
+            
+            // 胜利也可以重玩
+            const btn = document.querySelector('#game-modal .game-btn');
+            btn.onclick = resetGame;
+            btn.innerText = "再玩一次";
+
+            // 胜利烟花
+            for(let i=0; i<20; i++) {
+                setTimeout(() => {
+                    createParticle(Math.random()*window.innerWidth, Math.random()*window.innerHeight, '🎆');
+                }, i*200);
+            }
+        }
+
+        // 粒子特效
+        function createParticle(x, y, char) {
+            const p = document.createElement('div');
+            p.style.position = 'absolute';
+            p.style.left = x + 'px';
+            p.style.top = y + 'px';
+            p.style.fontSize = '20px';
+            p.innerHTML = char;
+            p.style.pointerEvents = 'none';
+            p.style.zIndex = 200;
+            p.style.transition = 'all 1s ease-out';
+            document.body.appendChild(p);
+            
+            setTimeout(() => {
+                p.style.transform = `translate(${Math.random()*100-50}px, ${Math.random()*100-50}px) scale(0)`;
+                p.style.opacity = 0;
+            }, 10);
+            setTimeout(() => p.remove(), 1000);
+        }
+        
+        // 点击爱心
+        function clickHeart(e) {
+             createParticle(e.clientX, e.clientY, '❤️');
+        }
+
+    </script>
+</body>
+</html>

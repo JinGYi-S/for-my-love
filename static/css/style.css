@@ -1,0 +1,422 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Noto+Serif+SC:wght@500&display=swap');
+
+body { 
+    margin: 0; 
+    padding: 0; 
+    background-color: #000; 
+    overflow: hidden; 
+    font-family: 'Noto Serif SC', serif;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    user-select: none;
+    touch-action: none; /* 防止移动端滚动 */
+}
+
+/* 星空背景 */
+#starfield {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+}
+
+/* 通用容器 */
+.container {
+    text-align: center;
+    position: relative;
+    z-index: 10;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+}
+
+/* 启动按钮 */
+.start-btn, .game-btn {
+    padding: 15px 40px;
+    background: linear-gradient(45deg, #ff6b8b, #ff8e53);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(255, 107, 139, 0.6);
+    animation: pulse-btn 2s infinite;
+    z-index: 999;
+    margin-top: 20px;
+    pointer-events: auto;
+}
+
+@keyframes pulse-btn {
+    0% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 107, 139, 0.6); }
+    50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(255, 107, 139, 0.8); }
+    100% { transform: scale(1); box-shadow: 0 0 20px rgba(255, 107, 139, 0.6); }
+}
+
+/* 浪漫环节内容 */
+.romance-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 15;
+}
+
+/* 大爱心 */
+.heart-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+    animation: beat 1.2s infinite;
+    cursor: pointer;
+}
+
+.heart-shape {
+    position: absolute;
+    top: 0; left: 50px; width: 50px; height: 80px;
+    background: #ff3366;
+    border-radius: 50px 50px 0 0;
+    transform: rotate(-45deg); transform-origin: 0 100%;
+    box-shadow: 0 0 40px #ff3366;
+}
+.heart-shape:after {
+    content: ""; position: absolute; top: 0; left: 0; width: 50px; height: 80px;
+    background: #ff3366; border-radius: 50px 50px 0 0;
+    transform: rotate(90deg); transform-origin: 0 100%;
+}
+
+@keyframes beat {
+    0%, 28%, 70% { transform: scale(1); }
+    14%, 42% { transform: scale(1.3); }
+}
+
+.timer { font-size: 18px; margin: 10px 0; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+.timer b { font-size: 24px; color: #ff6b8b; font-family: 'Dancing Script', cursive; }
+
+.typewriter {
+    font-size: 18px; line-height: 1.6; min-height: 80px;
+    max-width: 90%; margin: 10px auto;
+    text-shadow: 0 0 5px rgba(255,192,203,0.5);
+}
+
+/* --- 游戏相关样式 --- */
+#game-layer {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 50%, #431228 100%);
+    background-size: 200% 200%;
+    animation: bg-shift 15s ease infinite;
+    z-index: 100;
+    flex-direction: column;
+}
+
+@keyframes bg-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.game-header {
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.resource-bar { color: #ffd700; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+
+.game-board {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    border-top: 2px solid rgba(255,107,139,0.5);
+    border-bottom: 2px solid rgba(255,107,139,0.5);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* 敌人 */
+.enemy {
+    position: absolute;
+    width: 50px; height: 50px;
+    font-size: 30px;
+    display: flex; justify-content: center; align-items: center;
+    transition: top 0.1s linear;
+    z-index: 102;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+}
+
+.enemy.boss {
+    font-size: 60px;
+    z-index: 110;
+    filter: drop-shadow(0 6px 14px rgba(255, 51, 102, 0.8))
+            drop-shadow(0 0 22px rgba(255, 107, 139, 0.6));
+    animation: bossPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes bossPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
+/* 防御塔 */
+.tower {
+    position: absolute;
+    width: 100%; height: 100%;
+    font-size: 30px;
+    display: flex; justify-content: center; align-items: center;
+    z-index: 101;
+    animation: bounce 0.5s;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+    text-shadow: 0 2px 0 rgba(0,0,0,0.2);
+}
+
+/* 子弹 */
+.bullet {
+    position: absolute;
+    width: 20px; height: 20px;
+    background: radial-gradient(circle at 30% 30%, #ff88aa, #ff3366 60%, #b01244);
+    border-radius: 50%;
+    box-shadow: 0 0 10px #ff3366;
+    z-index: 103;
+}
+
+/* 网格系统 */
+.grid-row { display: flex; height: 16.66%; width: 100%; border-bottom: 1px dashed rgba(255,255,255,0.2); }
+.grid-cell {
+    flex: 1;
+    border-right: 1px dashed rgba(255,255,255,0.2);
+    position: relative;
+    display: flex; justify-content: center; align-items: center;
+    background: rgba(255, 255, 255, 0.02);
+    transition: background 0.2s;
+}
+/* 棋盘格效果 */
+.grid-row:nth-child(even) .grid-cell:nth-child(odd),
+.grid-row:nth-child(odd) .grid-cell:nth-child(even) {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.grid-cell.selected { background: rgba(255, 107, 139, 0.3); }
+
+/* 底部植物栏 */
+.plant-bar {
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    background: rgba(0,0,0,0.5);
+    padding-bottom: 20px; /* 适配全面屏底部 */
+}
+
+.plant-card {
+    width: 60px; height: 70px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.06));
+    border: 2px solid rgba(255,255,255,0.35);
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3), inset 0 4px 8px rgba(255,255,255,0.1);
+}
+
+.plant-card.active { border-color: #ff6b8b; box-shadow: 0 0 15px #ff6b8b; background: rgba(255, 107, 139, 0.2); }
+.plant-card.disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+.plant-card.locked { opacity: 0.35; filter: saturate(0.6) grayscale(0.3); pointer-events: none; }
+.plant-card.locked::after {
+    content: '🔒';
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    font-size: 14px;
+}
+
+.cost-tag {
+    font-size: 12px; color: #ffd700;
+    margin-top: 2px;
+}
+
+/* 掉落资源 */
+.sun {
+    position: absolute;
+    font-size: 24px;
+    cursor: pointer;
+    animation: float-sun 3s linear infinite;
+    z-index: 105;
+}
+
+@keyframes float-sun { 0% { transform: translateY(0); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0); } }
+
+/* 游戏结束弹窗 */
+.modal {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: none;
+    flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 200;
+}
+.modal h2 { font-size: 32px; color: #ff6b8b; margin-bottom: 20px; }
+
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    10% { transform: translate(-1px, -2px) rotate(-1deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    30% { transform: translate(3px, 2px) rotate(0deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    50% { transform: translate(-1px, 2px) rotate(-1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    70% { transform: translate(3px, 1px) rotate(-1deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    90% { transform: translate(1px, 2px) rotate(0deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.guide-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 150;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center;
+    padding: 20px;
+    pointer-events: none;
+    animation: fadeOut 1s ease-in-out 3s forwards;
+}
+@keyframes fadeOut { to { opacity: 0; pointer-events: none; } }
+@keyframes buffPulse {
+    0% { box-shadow: inset 0 0 0 6px rgba(255,107,139,0.9), inset 0 0 30px 15px rgba(255, 215, 0, 0.2); filter: saturate(1.2) brightness(1); }
+    100% { box-shadow: inset 0 0 0 6px rgba(255,215,0,0.9), inset 0 0 50px 25px rgba(255, 107, 139, 0.3); filter: saturate(1.5) brightness(1.2); }
+}
+
+.giant-heart {
+    position: absolute;
+    font-size: 160px;
+    line-height: 160px;
+    width: 160px; height: 160px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300;
+    text-shadow: 0 0 30px rgba(255, 51, 102, 0.8);
+    animation: giantPop 1.2s ease-out forwards;
+}
+
+@keyframes giantPop {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(1); opacity: 0; }
+}
+
+.help-btn {
+    padding: 20px 45px;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    border-radius: 60px;
+    background: linear-gradient(135deg, #ff3366, #ff0044);
+    color: #fff;
+    font-weight: bold;
+    font-size: 26px;
+    box-shadow: 0 0 30px rgba(255, 51, 102, 1), 0 0 60px rgba(255, 0, 68, 0.6);
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 250;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    animation: helpBtnPulse 0.8s infinite alternate;
+}
+
+@keyframes helpBtnPulse {
+    0% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 30px rgba(255, 51, 102, 0.8); }
+    100% { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 70px rgba(255, 51, 102, 1), 0 0 20px #fff; }
+}
+
+.help-btn:active {
+    transform: translate(-50%, -50%) scale(0.95);
+}
+
+.screen-flash {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 500;
+    animation: flash 1s ease-out;
+}
+
+@keyframes flash {
+    0% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
+.celebration-text {
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    color: #ffd700;
+    text-shadow: 0 0 20px #ff3366;
+    z-index: 400;
+    font-weight: bold;
+    white-space: nowrap;
+    animation: popUpText 2s ease-out forwards;
+}
+
+@keyframes popUpText {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+#buff-overlay {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    bottom: 80px;
+    pointer-events: none;
+    z-index: 200;
+    box-shadow: inset 0 0 0 6px rgba(255,107,139,0.9), inset 0 0 40px 20px rgba(255, 215, 0, 0.3);
+    animation: buffPulse 0.6s infinite alternate;
+}
+
+#boss-hp-bar {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 16px;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,107,139,0.7);
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(255, 51, 102, 0.4), inset 0 2px 6px rgba(0,0,0,0.4);
+    z-index: 220;
+    display: none;
+    overflow: hidden;
+}
+
+#boss-hp-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ff3366, #ff6b8b);
+    box-shadow: 0 0 12px rgba(255, 51, 102, 0.7);
+    transition: width 0.2s ease;
+}
