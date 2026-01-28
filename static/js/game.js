@@ -387,8 +387,8 @@ function startWave(w) {
     updateGridInteractivity();
     showPrompt(`第${w}波开始`);
     
-    let count = 5 + wave * 3; // 敌人数量
-    let spawnInterval = 2000 - wave * 300;
+    let count = 10 + wave * 5; // 敌人数量增加，波次变长
+    let spawnInterval = 1500 - wave * 200;
     
     let spawned = 0;
     enemySpawnTimer = setInterval(() => {
@@ -443,7 +443,7 @@ function spawnEnemy(level, speedOverride) {
     
     // 基础数值
     const baseHp = 15 * level;
-    const baseSpeed = 0.18 + level * 0.03;
+    const baseSpeed = 0.25 + level * 0.04; // 提高基础速度，制造紧张感
     
     const speedValue = (typeof speedOverride === 'number') ? speedOverride : (baseSpeed * config.speedMod);
     enemies.push({
@@ -473,9 +473,9 @@ function spawnBoss() {
     enemy.style.top = '-60px';
     board.appendChild(enemy);
     const baseHp = 15 * 3;
-    const baseSpeed = 0.18 + 3 * 0.03;
+    const baseSpeed = 0.25 + 3 * 0.04;
     const hp = baseHp * 10;
-    const speed = baseSpeed * 0.25;
+    const speed = baseSpeed * 0.4; // Boss稍微快一点
     bossEnemy = {
         el: enemy,
         x: x,
@@ -625,7 +625,7 @@ function startInfiniteRush() {
         if (!gameActive) return;
         const count = Math.floor(Math.random() * 2) + 1; // 1-2个
         for(let i=0; i<count; i++) {
-            spawnEnemy(3, Math.random() * 0.4 + 0.2); 
+            spawnEnemy(3, Math.random() * 0.5 + 0.3); 
         }
     }, 600);
 }
