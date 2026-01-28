@@ -103,7 +103,7 @@ function clickHeart(e) {
 let ROWS = 9;
 const COLS = 5;
 let gameActive = false;
-let points = 100;
+let points = 125;
 let selectedPlantType = null;
 let grid = []; // 存储格子状态
 let enemies = [];
@@ -616,7 +616,7 @@ function invokeHelp() {
     // 启动无限刷怪
     setTimeout(() => {
         startInfiniteRush();
-    }, 1500);
+    }, 1000); // 缩短等待时间到1秒
 }
 
 function startInfiniteRush() {
@@ -667,10 +667,12 @@ function startInfiniteRush() {
         if (!gameActive) return;
         const count = Math.floor(Math.random() * 2) + 1; // 1-2个
         for(let i=0; i<count; i++) {
-            // 极大提高速度
-            spawnEnemy(3, Math.random() * 0.8 + 0.5); 
+            // 极大提高速度：使用较大的固定基数，确保在手机上也能飞快
+            // 之前的 Math.random() * 0.8 + 0.5 太慢了（0.5-1.3）
+            // 改为 1.5 - 2.5 之间的速度
+            spawnEnemy(3, Math.random() * 1.0 + 1.5); 
         }
-    }, 500);
+    }, 400); // 稍微加快生成频率
 }
 
 function gameWin() {
