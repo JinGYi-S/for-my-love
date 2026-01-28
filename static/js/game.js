@@ -443,7 +443,7 @@ function spawnEnemy(level, speedOverride) {
     
     // 基础数值
     const baseHp = 15 * level;
-    const baseSpeed = 0.25 + level * 0.04; // 提高基础速度，制造紧张感
+    const baseSpeed = 0.35 + level * 0.05; // 进一步提高基础速度
     
     const speedValue = (typeof speedOverride === 'number') ? speedOverride : (baseSpeed * config.speedMod);
     enemies.push({
@@ -473,7 +473,7 @@ function spawnBoss() {
     enemy.style.top = '-60px';
     board.appendChild(enemy);
     const baseHp = 15 * 3;
-    const baseSpeed = 0.25 + 3 * 0.04;
+    const baseSpeed = 0.35 + 3 * 0.05;
     const hp = baseHp * 10;
     const speed = baseSpeed * 0.4; // Boss稍微快一点
     bossEnemy = {
@@ -619,24 +619,74 @@ function startInfiniteRush() {
     showPrompt("疯狂模式：无限刷怪！");
     isSpawning = true;
     
+    // 启动倒计时（如果尚未启动）
+    const layer = document.getElementById('game-layer');
+    let timerDisplay = document.getElementById('rush-timer');
+    
+    if (!timerDisplay) { // 第一次进入无限模式
+        timerDisplay = document.createElement('div');
+        timerDisplay.id = 'rush-timer';
+        timerDisplay.style.position = 'absolute';
+        timerDisplay.style.top = '100px';
+        timerDisplay.style.left = '50%';
+        timerDisplay.style.transform = 'translateX(-50%)';
+        timerDisplay.style.color = '#ff3366';
+        timerDisplay.style.fontSize = '32px';
+        timerDisplay.style.fontWeight = 'bold';
+        timerDisplay.style.zIndex = '200';
+        timerDisplay.style.textShadow = '0 0 10px #fff';
+        layer.appendChild(timerDisplay);
+        
+        let timeLeft = 60;
+        timerDisplay.innerText = `坚持 ${timeLeft} 秒`;
+        
+        const rushInterval = setInterval(() => {
+            if (!gameActive) {
+                clearInterval(rushInterval);
+                if(timerDisplay) timerDisplay.remove();
+                return;
+            }
+            timeLeft--;
+            timerDisplay.innerText = `坚持 ${timeLeft} 秒`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(rushInterval);
+                if(timerDisplay) timerDisplay.remove();
+                gameWin();
+            }
+        }, 1000);
+    }
+    
     if (enemySpawnTimer) clearInterval(enemySpawnTimer);
     
     enemySpawnTimer = setInterval(() => {
         if (!gameActive) return;
         const count = Math.floor(Math.random() * 2) + 1; // 1-2个
         for(let i=0; i<count; i++) {
-            spawnEnemy(3, Math.random() * 0.5 + 0.3); 
+            // 极大提高速度
+            spawnEnemy(3, Math.random() * 0.8 + 0.5); 
         }
-    }, 600);
+    }, 500);
 }
 
-function checkWinCondition() {
-    const checkInterval = setInterval(() => {
-        if (!gameActive) { clearInterval(checkInterval); return; }
-        if (enemies.length === 0 && !enemySpawnTimer) { 
-             // 简单判断：如果当前波次怪出完了，且场上没怪了
-        }
-    }, 1000);
+function gameWin() {
+    gameActive = false;
+    cancelAnimationFrame(gameLoopId);
+    if (enemySpawnTimer) clearInterval(enemySpawnTimer);
+    if (resourceTimer) clearInterval(resourceTimer);
+    stopBossMinions();
+    
+    // 清除所有敌人
+    enemies.forEach(e => e.el.remove());
+    enemies = [];
+    
+    document.getElementById('modal-title').innerText = "挑战成功！";
+    document.getElementById('modal-msg').innerHTML = "虽然生活中有小怪兽，<br>但因为有爱，<br>我们永远是赢家！<br>老婆真棒！";
+    document.getElementById('game-modal').style.display = 'flex';
+    
+    const btn = document.querySelector('#game-modal .game-btn');
+    btn.onclick = () => location.reload();
+    btn.innerText = "再玩一次";
 }
 
 function gameLoop() {
