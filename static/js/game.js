@@ -103,7 +103,7 @@ function clickHeart(e) {
 let ROWS = 9;
 const COLS = 5;
 let gameActive = false;
-let points = 520;
+let points = 100;
 let selectedPlantType = null;
 let grid = []; // 存储格子状态
 let enemies = [];
@@ -908,7 +908,7 @@ function resetGame() {
     document.querySelectorAll('.sun').forEach(s => s.remove());
     
     // 重置状态
-    points = 520;
+    points = 100;
     wave = 1;
     isSpawning = false;
     if(enemySpawnTimer) clearInterval(enemySpawnTimer);
