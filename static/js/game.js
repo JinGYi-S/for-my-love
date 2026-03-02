@@ -1,19 +1,34 @@
 // --- Game Constants & Configuration ---
 const CONFIG = {
-    gravity: 900,           // 降低重力，让跳跃更轻盈 (原1200)
-    jumpStrength: 750,      // 提升跳跃高度 (原700) -> MaxHeight ≈ 312px
-    moveSpeed: 450,         // 略微提升水平移动速度 (原400)
-    platformWidth: 90,      // 增加基础宽度 (原80)
+    gravity: 900,           // 降低重力，让跳跃更轻盈
+    jumpStrength: 750,      // 提升跳跃高度
+    moveSpeed: 450,         // 略微提升水平移动速度
+    platformWidth: 90,      // 增加基础宽度
     platformHeight: 20,
-    platformGapMin: 50,     // 减小最小间距 (原80)
-    platformGapMax: 160,    // 大幅减小最大间距 (原200)，确保一定能跳过去
+    platformGapMin: 50,     // 减小最小间距
+    platformGapMax: 160,    // 大幅减小最大间距
     colors: {
-        sky: ['#87CEEB', '#E0F7FA'],
+        skyStart: [135, 206, 235], // #87CEEB (Sky Blue)
+        skyEnd: [224, 247, 250],   // #E0F7FA (Light Cyan)
+        sunsetStart: [255, 127, 80], // Coral
+        sunsetEnd: [106, 90, 205],   // SlateBlue
+        nightStart: [25, 25, 112],   // MidnightBlue
+        nightEnd: [75, 0, 130],      // Indigo
         cloud: '#FFFFFF',
         player: '#FF6B8B',
         platform: '#FFFFFF',
         text: '#333333'
-    }
+    },
+    loveMessages: [
+        "遇见你真好 ❤️",
+        "每天都要开心哦 ✨",
+        "你是我的唯一 🌹",
+        "爱没有终点 🚀",
+        "云端之上有你 ☁️",
+        "陪你飞到外太空 🪐",
+        "星星都为你闪烁 ⭐",
+        "想把最好的给你 🎁"
+    ]
 };
 
 // --- Game State ---
@@ -27,6 +42,10 @@ const state = {
     score: 0,
     highScore: 0,
     cameraY: 0,
+    lastMilestone: 0, // 上一次显示情话的高度
+    
+    // Audio Context
+    audioCtx: null,
     
     player: {
         x: 0,
@@ -49,6 +68,56 @@ const state = {
     }
 };
 
+// --- Audio System ---
+function initAudio() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        state.audioCtx = new AudioContext();
+    } catch (e) {
+        console.warn('Web Audio API not supported');
+    }
+}
+
+function playSound(type) {
+    if (!state.audioCtx) return;
+    
+    // Create oscillator
+    const osc = state.audioCtx.createOscillator();
+    const gainNode = state.audioCtx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(state.audioCtx.destination);
+    
+    const now = state.audioCtx.currentTime;
+    
+    if (type === 'jump') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    } else if (type === 'collect') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, now);
+        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now);
+        osc.stop(now + 0.2);
+    } else if (type === 'superjump') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+        osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+    }
+}
+
 // --- Initialization ---
 window.onload = function() {
     initGame();
@@ -58,6 +127,8 @@ function initGame() {
     state.canvas = document.getElementById('game-canvas');
     state.ctx = state.canvas.getContext('2d');
     
+    initAudio(); // 初始化音效系统
+
     // Handle resize
     window.addEventListener('resize', resize);
     resize();
@@ -85,6 +156,17 @@ function initGame() {
         const startScreen = document.getElementById('start-screen');
         if (startScreen.style.display !== 'none') {
             startGame();
+            // Try to play BGM on first interaction
+            const bgm = document.getElementById('bgm');
+            if (bgm) {
+                bgm.volume = 0.5;
+                bgm.play().catch(e => console.log("Auto-play prevented"));
+            }
+            
+            // Resume AudioContext if suspended
+            if (state.audioCtx && state.audioCtx.state === 'suspended') {
+                state.audioCtx.resume();
+            }
         }
     });
     
@@ -284,6 +366,12 @@ function update(dt) {
         state.platforms = state.platforms.filter(plat => plat.y < state.height + 100);
         state.items = state.items.filter(item => item.y < state.height + 100);
         
+        // Milestone Check (每500分)
+        if (Math.floor(state.score / 500) > Math.floor(state.lastMilestone / 500)) {
+            showMilestone();
+        }
+        state.lastMilestone = state.score;
+
         // Generate new platforms
         const highestPlatform = state.platforms.reduce((min, p) => p.y < min ? p.y : min, state.height);
         if (highestPlatform > 100) {
@@ -302,8 +390,7 @@ function update(dt) {
                 // Bounce
                 p.vy = -CONFIG.jumpStrength;
                 createParticles(p.x + p.width/2, p.y + p.height, 5, '#FFF');
-                
-                // Play sound effect (optional/todo)
+                playSound('jump');
             }
         });
     }
@@ -329,6 +416,7 @@ function update(dt) {
             item.collected = true;
             state.score += (item.type === 'star' ? 500 : 100);
             createParticles(item.x + item.width/2, item.y + item.height/2, 10, item.type === 'star' ? '#FFD700' : '#FF6B8B');
+            playSound(item.type === 'star' ? 'superjump' : 'collect');
             
             // Boost
             if (item.type === 'star') {
@@ -383,28 +471,87 @@ function createParticles(x, y, count, color) {
     }
 }
 
+// --- Helper Functions ---
+function showMilestone() {
+    const msg = CONFIG.loveMessages[Math.floor(Math.random() * CONFIG.loveMessages.length)];
+    const el = document.createElement('div');
+    el.className = 'milestone-text';
+    el.innerText = msg;
+    document.getElementById('ui-layer').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+// 颜色插值
+function interpolateColor(color1, color2, factor) {
+    const result = color1.slice();
+    for (let i = 0; i < 3; i++) {
+        result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+    }
+    return `rgb(${result[0]}, ${result[1]}, ${result[2]})`;
+}
+
+// 获取当前背景色
+function getSkyColor(score) {
+    const maxScore = 5000; // 5000分到达星空
+    const ratio = Math.min(score / maxScore, 1);
+    
+    let start, end;
+    
+    if (ratio < 0.5) {
+        // Sky -> Sunset
+        const localRatio = ratio * 2;
+        start = interpolateColor(CONFIG.colors.skyStart, CONFIG.colors.sunsetStart, localRatio);
+        end = interpolateColor(CONFIG.colors.skyEnd, CONFIG.colors.sunsetEnd, localRatio);
+    } else {
+        // Sunset -> Night
+        const localRatio = (ratio - 0.5) * 2;
+        start = interpolateColor(CONFIG.colors.sunsetStart, CONFIG.colors.nightStart, localRatio);
+        end = interpolateColor(CONFIG.colors.sunsetEnd, CONFIG.colors.nightEnd, localRatio);
+    }
+    
+    return { start, end };
+}
+
 // --- Draw Logic ---
 function draw() {
     const ctx = state.ctx;
-    ctx.clearRect(0, 0, state.width, state.height);
+    
+    // 0. Dynamic Background
+    const sky = getSkyColor(state.score);
+    const grad = ctx.createLinearGradient(0, 0, 0, state.height);
+    grad.addColorStop(0, sky.start);
+    grad.addColorStop(1, sky.end);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, state.width, state.height);
     
     // 1. Draw Background Elements (Sun & Clouds)
-    // Sun
+    // Sun/Moon
     const sunY = state.height * 0.15;
-    ctx.fillStyle = '#FFF2CC';
+    ctx.fillStyle = state.score > 2500 ? '#FFFACD' : '#FFF2CC'; // Moon color or Sun color
     ctx.beginPath();
     ctx.arc(state.width * 0.8, sunY, 60, 0, Math.PI * 2);
     ctx.fill();
-    // Sun rays
-    ctx.strokeStyle = 'rgba(255, 242, 204, 0.5)';
-    ctx.lineWidth = 2;
-    const time = Date.now() / 2000;
-    for(let i=0; i<12; i++) {
-        const angle = time + (i * Math.PI / 6);
-        ctx.beginPath();
-        ctx.moveTo(state.width * 0.8 + Math.cos(angle)*70, sunY + Math.sin(angle)*70);
-        ctx.lineTo(state.width * 0.8 + Math.cos(angle)*100, sunY + Math.sin(angle)*100);
-        ctx.stroke();
+    
+    if (state.score < 2500) {
+        // Sun rays
+        ctx.strokeStyle = 'rgba(255, 242, 204, 0.5)';
+        ctx.lineWidth = 2;
+        const time = Date.now() / 2000;
+        for(let i=0; i<12; i++) {
+            const angle = time + (i * Math.PI / 6);
+            ctx.beginPath();
+            ctx.moveTo(state.width * 0.8 + Math.cos(angle)*70, sunY + Math.sin(angle)*70);
+            ctx.lineTo(state.width * 0.8 + Math.cos(angle)*100, sunY + Math.sin(angle)*100);
+            ctx.stroke();
+        }
+    } else {
+        // Stars in background
+        ctx.fillStyle = '#FFF';
+        for(let i=0; i<20; i++) {
+             const x = (Math.sin(i * 132 + Date.now()/1000) * 0.5 + 0.5) * state.width;
+             const y = (Math.cos(i * 53 + Date.now()/1500) * 0.5 + 0.5) * state.height;
+             ctx.fillRect(x, y, 2, 2);
+        }
     }
     
     // Background Clouds
