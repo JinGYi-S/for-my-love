@@ -20,14 +20,14 @@ const CONFIG = {
         text: '#333333'
     },
     loveMessages: [
-        "遇见你真好 ❤️",
-        "每天都要开心哦 ✨",
-        "你是我的唯一 🌹",
-        "爱没有终点 🚀",
-        "云端之上有你 ☁️",
-        "陪你飞到外太空 🪐",
-        "星星都为你闪烁 ⭐",
-        "想把最好的给你 🎁"
+        "遇见你真好",
+        "每天都要开心哦",
+        "你是我的唯一",
+        "爱没有终点",
+        "云端之上有你",
+        "陪你飞到外太空",
+        "星星都为你闪烁",
+        "想把最好的给你"
     ]
 };
 
@@ -180,6 +180,8 @@ function initWishes() {
     
     // 4. Bind Events
     document.getElementById('wish-btn').addEventListener('click', makeWish);
+    
+    // 动态控制星空层的点击穿透
     STAR_CANVAS.el.addEventListener('click', handleStarClick);
     
     // 5. Start Animation Loop
@@ -243,9 +245,12 @@ function renderStars() {
     // Only render when game over screen is visible (to save performance)
     const gameOverScreen = document.getElementById('game-over-screen');
     if (!gameOverScreen || gameOverScreen.style.display === 'none') {
+        STAR_CANVAS.el.style.pointerEvents = 'none'; // 游戏进行中，禁止拦截点击
         requestAnimationFrame(renderStars);
         return;
     }
+    
+    STAR_CANVAS.el.style.pointerEvents = 'auto'; // 游戏结束，允许点击星星
     
     const time = Date.now() / 1000;
     
@@ -746,7 +751,7 @@ function showMilestone() {
     const msg = CONFIG.loveMessages[Math.floor(Math.random() * CONFIG.loveMessages.length)];
     const el = document.createElement('div');
     el.className = 'milestone-text';
-    el.innerText = msg;
+    el.innerHTML = `<span style="font-family: 'Times New Roman', serif; font-style: italic;">${msg}</span>`; // 更加优雅的字体
     document.getElementById('ui-layer').appendChild(el);
     setTimeout(() => el.remove(), 3000);
 }
