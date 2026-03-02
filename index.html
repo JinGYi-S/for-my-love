@@ -11,6 +11,17 @@
         <canvas id="game-canvas"></canvas>
         <div id="ui-layer">
             <div id="score-board">高度: <span id="score">0</span> m</div>
+            
+            <!-- 暂停按钮 -->
+            <button id="pause-btn" style="display: none;">⏸️</button>
+            
+            <!-- 暂停菜单 -->
+            <div id="pause-menu" style="display: none;">
+                <h2>已暂停</h2>
+                <button id="resume-btn">继续游戏</button>
+                <button id="quit-btn">返回主页</button>
+            </div>
+
             <div id="start-screen">
                 <h1>☁️ 云端恋人 ☁️</h1>
                 <p>点击或按空格开始</p>
