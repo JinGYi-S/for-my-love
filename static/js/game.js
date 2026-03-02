@@ -54,7 +54,8 @@ const state = {
         height: 40,
         vx: 0,
         vy: 0,
-        facingRight: true
+        facingRight: true,
+        img: null // Custom Avatar Image
     },
     
     platforms: [],
@@ -129,6 +130,189 @@ function playSound(type) {
     }
 }
 
+// --- Wish System ---
+const wishes = [];
+const STAR_CANVAS = {
+    el: null,
+    ctx: null,
+    width: 0,
+    height: 0,
+    stars: []
+};
+
+function initWishes() {
+    // 1. Load saved wishes
+    try {
+        const saved = JSON.parse(localStorage.getItem('love_wishes') || '[]');
+        if (Array.isArray(saved)) {
+            saved.forEach(w => wishes.push(w));
+        }
+    } catch(e) {}
+    
+    // 2. Add Default Wishes (彩蛋：你的诗句)
+    if (wishes.length === 0) {
+        const defaults = [
+            { text: "在天愿作比翼鸟，在地愿为连理枝", date: "2023-05-20", t: 1684512000000 },
+            { text: "身无彩凤双飞翼，心有灵犀一点通", date: "2023-08-22", t: 1692633600000 },
+            { text: "两情若是久长时，又岂在朝朝暮暮", date: "2024-02-14", t: 1707840000000 },
+            { text: "死生契阔，与子成说。执子之手，与子偕老", date: "2022-01-01", t: 1640966400000 },
+            { text: "关关雎鸠，在河之洲。窈窕淑女，君子好逑", date: "2022-02-14", t: 1644768000000 },
+            { text: "愿得一心人，白头不相离", date: "2022-05-20", t: 1652976000000 },
+            { text: "入我相思门，知我相思苦", date: "2022-06-01", t: 1654012800000 },
+            { text: "玲珑骰子安红豆，入骨相思知不知", date: "2022-08-04", t: 1659542400000 },
+            { text: "只愿君心似我心，定不负相思意", date: "2022-10-01", t: 1664553600000 },
+            { text: "平生不会相思，才会相思，便害相思", date: "2022-12-25", t: 1671900000000 },
+            { text: "山有木兮木有枝，心悦君兮君不知", date: "2023-01-22", t: 1674316800000 },
+            { text: "曾经沧海难为水，除却巫山不是云", date: "2023-03-14", t: 1678723200000 },
+            { text: "衣带渐宽终不悔，为伊消得人憔悴", date: "2023-05-21", t: 1684598400000 },
+            { text: "晓看天色暮看云，行也思君，坐也思君", date: "2023-07-07", t: 1688659200000 },
+            { text: "情不知所起，一往而深", date: "2023-09-29", t: 1695916800000 },
+            { text: "青青子衿，悠悠我心", date: "2023-11-11", t: 1699632000000 }
+        ];
+        defaults.forEach(d => wishes.push(d));
+    }
+    
+    // 3. Init Canvas
+    STAR_CANVAS.el = document.getElementById('star-canvas');
+    STAR_CANVAS.ctx = STAR_CANVAS.el.getContext('2d');
+    resizeStarCanvas();
+    window.addEventListener('resize', resizeStarCanvas);
+    
+    // 4. Bind Events
+    document.getElementById('wish-btn').addEventListener('click', makeWish);
+    STAR_CANVAS.el.addEventListener('click', handleStarClick);
+    
+    // 5. Start Animation Loop
+    requestAnimationFrame(renderStars);
+}
+
+function resizeStarCanvas() {
+    STAR_CANVAS.width = STAR_CANVAS.el.width = window.innerWidth;
+    STAR_CANVAS.height = STAR_CANVAS.el.height = window.innerHeight;
+    initStars();
+}
+
+function initStars() {
+    STAR_CANVAS.stars = [];
+    wishes.forEach(w => {
+        const isNew = (Date.now() - (w.t || 0)) < 24 * 60 * 60 * 1000;
+        STAR_CANVAS.stars.push({
+            x: Math.random() * STAR_CANVAS.width,
+            y: Math.random() * (STAR_CANVAS.height * 0.6), // 只在上半部分
+            size: isNew ? Math.random() * 4 + 4 : Math.random() * 2 + 1,
+            color: isNew ? '#FFD700' : '#FFF', // 新星金色，旧星白色
+            blinkSpeed: isNew ? 0.1 : 0.02,
+            blinkOffset: Math.random() * Math.PI * 2,
+            data: w,
+            isNew: isNew
+        });
+    });
+}
+
+function makeWish() {
+    const input = document.getElementById('wish-input');
+    const text = input.value.trim();
+    if (!text) return;
+    
+    const now = new Date();
+    const wish = {
+        text: text,
+        date: `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`,
+        t: now.getTime()
+    };
+    
+    wishes.push(wish);
+    localStorage.setItem('love_wishes', JSON.stringify(wishes));
+    
+    // Animation: Create a shooting star (simplified by re-init)
+    initStars();
+    
+    // Feedback
+    input.value = '';
+    alert("许愿成功！它已经变成了一颗星星 ✨");
+    playSound('collect'); // 复用音效
+}
+
+function renderStars() {
+    const ctx = STAR_CANVAS.ctx;
+    const w = STAR_CANVAS.width;
+    const h = STAR_CANVAS.height;
+    
+    ctx.clearRect(0, 0, w, h);
+    
+    // Only render when game over screen is visible (to save performance)
+    const gameOverScreen = document.getElementById('game-over-screen');
+    if (!gameOverScreen || gameOverScreen.style.display === 'none') {
+        requestAnimationFrame(renderStars);
+        return;
+    }
+    
+    const time = Date.now() / 1000;
+    
+    STAR_CANVAS.stars.forEach(s => {
+        ctx.globalAlpha = 0.5 + Math.sin(time * s.blinkSpeed * 10 + s.blinkOffset) * 0.5;
+        ctx.fillStyle = s.color;
+        
+        ctx.beginPath();
+        if (s.isNew) {
+            // Draw Star Shape for new wishes
+            for(let i=0; i<5; i++) {
+                ctx.lineTo(Math.cos((18+i*72)/180*Math.PI)*s.size + s.x,
+                           -Math.sin((18+i*72)/180*Math.PI)*s.size + s.y);
+                ctx.lineTo(Math.cos((54+i*72)/180*Math.PI)*(s.size/2) + s.x,
+                           -Math.sin((54+i*72)/180*Math.PI)*(s.size/2) + s.y);
+            }
+        } else {
+            // Simple circle for old wishes
+            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        }
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    
+    requestAnimationFrame(renderStars);
+}
+
+function handleStarClick(e) {
+    const rect = STAR_CANVAS.el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Find clicked star
+    const clicked = STAR_CANVAS.stars.find(s => {
+        const dx = x - s.x;
+        const dy = y - s.y;
+        return (dx*dx + dy*dy) < (s.size * s.size * 4 + 100); // 增加点击判定范围
+    });
+    
+    if (clicked) {
+        showStarPopup(clicked.x, clicked.y, clicked.data);
+    }
+}
+
+function showStarPopup(x, y, data) {
+    // Remove existing
+    const old = document.querySelector('.star-popup');
+    if (old) old.remove();
+    
+    const div = document.createElement('div');
+    div.className = 'star-popup';
+    div.style.left = x + 'px';
+    div.style.top = y + 'px';
+    div.innerHTML = `
+        <span class="date">${data.date}</span>
+        <div class="content">${data.text}</div>
+    `;
+    
+    document.body.appendChild(div);
+    
+    // Auto remove
+    setTimeout(() => {
+        div.style.opacity = '0';
+        setTimeout(() => div.remove(), 500);
+    }, 3000);
+}
+
 // --- Initialization ---
 window.onload = function() {
     try {
@@ -156,6 +340,64 @@ function initGame() {
     // Handle input
     setupInput();
     
+    // Avatar Upload
+    const avatarInput = document.getElementById('avatar-upload');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // 更新预览
+                        const preview = document.getElementById('avatar-preview');
+                        preview.innerHTML = '';
+                        preview.appendChild(img);
+                        
+                        // 保存到游戏状态
+                        state.player.img = img;
+                        
+                        // 保存到 LocalStorage (可选)
+                        try {
+                            // 压缩图片以避免超出 localStorage 限制
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const maxSize = 100; // 缩略图尺寸
+                            let w = img.width;
+                            let h = img.height;
+                            if (w > h) { h = h * (maxSize/w); w = maxSize; }
+                            else { w = w * (maxSize/h); h = maxSize; }
+                            canvas.width = w;
+                            canvas.height = h;
+                            ctx.drawImage(img, 0, 0, w, h);
+                            localStorage.setItem('love_game_avatar', canvas.toDataURL());
+                        } catch(e) { console.log('Storage failed', e); }
+                    };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // Load saved avatar
+    try {
+        const saved = localStorage.getItem('love_game_avatar');
+        if (saved) {
+            const img = new Image();
+            img.onload = function() {
+                const preview = document.getElementById('avatar-preview');
+                if (preview) {
+                    preview.innerHTML = '';
+                    preview.appendChild(img);
+                }
+                state.player.img = img;
+            };
+            img.src = saved;
+        }
+    } catch(e) {}
+
     // Love Timer
     try {
         const start = new Date("2022-01-11");
@@ -168,6 +410,9 @@ function initGame() {
         const h1 = document.querySelector('#start-screen h1');
         if(h1) h1.after(timerDiv);
     } catch(e) { console.warn("Timer error", e); }
+
+    // Init Wishes
+    initWishes();
 
     // UI Buttons
     document.getElementById('game-container').addEventListener('click', (e) => {
@@ -620,13 +865,23 @@ function draw() {
     ctx.translate(p.x + p.width/2, p.y + p.height/2);
     if (!p.facingRight) ctx.scale(-1, 1);
     
-    // Draw a cute character (e.g., Angel/Cupid/Heart with wings)
-    // Body (Heart)
-    ctx.fillStyle = CONFIG.colors.player;
-    ctx.font = "40px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("👼", 0, 0); // Angel emoji as placeholder
+    if (p.img) {
+        // Draw Custom Avatar (Circle Clip)
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 0, p.width/2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(p.img, -p.width/2, -p.height/2, p.width, p.height);
+        ctx.restore();
+    } else {
+        // Default Avatar
+        ctx.fillStyle = CONFIG.colors.player;
+        ctx.font = "40px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("👼", 0, 0); 
+    }
     
     ctx.restore();
 }
