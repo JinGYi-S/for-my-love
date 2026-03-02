@@ -39,8 +39,9 @@ const state = {
     height: 0,
     lastTime: 0,
     isRunning: false,
+    isPaused: false, // 暂停状态
     score: 0,
-    highScore: 0,
+    highScore: parseInt(localStorage.getItem('love_game_highscore') || '0'),
     cameraY: 0,
     lastMilestone: 0, // 上一次显示情话的高度
     
@@ -181,6 +182,9 @@ function initWishes() {
     
     // 4. Bind Events
     document.getElementById('wish-btn').addEventListener('click', makeWish);
+    document.getElementById('pause-btn').addEventListener('click', togglePause);
+    document.getElementById('resume-btn').addEventListener('click', togglePause);
+    document.getElementById('quit-btn').addEventListener('click', quitGame);
     
     // 动态控制星空层的点击穿透 (交互优化：任意点击捕获流星)
     STAR_CANVAS.el.addEventListener('click', handleMeteorClick);
@@ -559,8 +563,11 @@ function startGame() {
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('game-over-screen').style.display = 'none';
     document.getElementById('score-board').style.display = 'block';
+    document.getElementById('pause-btn').style.display = 'block';
+    document.getElementById('pause-menu').style.display = 'none';
     
     state.isRunning = true;
+    state.isPaused = false;
     state.score = 0;
     state.cameraY = 0;
     
@@ -642,6 +649,12 @@ function gameLoop(timestamp) {
         return;
     }
     
+    // 如果暂停了，只渲染不更新，或者显示暂停菜单
+    if (state.isPaused) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    
     const dt = Math.min((timestamp - state.lastTime) / 1000, 0.05); // Cap dt at 50ms to prevent huge jumps
     state.lastTime = timestamp;
     
@@ -651,6 +664,45 @@ function gameLoop(timestamp) {
     if (state.isRunning) {
         requestAnimationFrame(gameLoop);
     }
+}
+
+function togglePause(e) {
+    if (e) e.stopPropagation(); // 防止触发点击星星
+    
+    if (!state.isRunning) return;
+    
+    state.isPaused = !state.isPaused;
+    
+    const pauseMenu = document.getElementById('pause-menu');
+    const pauseBtn = document.getElementById('pause-btn');
+    const bgm = document.getElementById('bgm');
+    
+    if (state.isPaused) {
+        pauseMenu.style.display = 'block';
+        pauseBtn.style.display = 'none';
+        if (bgm) bgm.volume = 0.2; // 降低音量
+    } else {
+        pauseMenu.style.display = 'none';
+        pauseBtn.style.display = 'block';
+        state.lastTime = performance.now(); // 重置时间，防止dt过大
+        if (bgm) bgm.volume = 0.5; // 恢复音量
+    }
+}
+
+function quitGame(e) {
+    if (e) e.stopPropagation();
+    
+    state.isRunning = false;
+    state.isPaused = false;
+    
+    document.getElementById('pause-menu').style.display = 'none';
+    document.getElementById('pause-btn').style.display = 'none';
+    document.getElementById('score-board').style.display = 'none';
+    document.getElementById('start-screen').style.display = 'block';
+    
+    // 重置背景音量
+    const bgm = document.getElementById('bgm');
+    if (bgm) bgm.volume = 0.5;
 }
 
 // --- Update Logic ---
@@ -790,6 +842,15 @@ function gameOver() {
     document.getElementById('final-score').innerText = state.score;
     document.getElementById('game-over-screen').style.display = 'block';
     document.getElementById('score-board').style.display = 'none';
+    document.getElementById('pause-btn').style.display = 'none'; // 隐藏暂停按钮
+    
+    // Save High Score
+    if (state.score > state.highScore) {
+        state.highScore = state.score;
+        try {
+            localStorage.setItem('love_game_highscore', state.highScore);
+        } catch(e) {}
+    }
 }
 
 function createParticles(x, y, count, color) {
