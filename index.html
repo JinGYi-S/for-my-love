@@ -15,6 +15,7 @@
                 <h1>☁️ 云端恋人 ☁️</h1>
                 <p>点击或按空格开始</p>
                 <p class="instruction">左右移动接住爱心，躲避乌云</p>
+                <p class="instruction" style="font-size: 12px; margin-top: 5px;">🎵 建议佩戴耳机体验最佳音效</p>
             </div>
             <div id="game-over-screen" style="display: none;">
                 <h1>这里是终点吗？</h1>
@@ -23,6 +24,10 @@
                 <button id="restart-btn">再次起飞</button>
             </div>
         </div>
+        <!-- 背景音乐播放器 -->
+        <audio id="bgm" loop>
+            <source src="bgm.mp3" type="audio/mpeg">
+        </audio>
     </div>
     <script src="static/js/game.js"></script>
 </body>
