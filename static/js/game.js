@@ -70,65 +70,85 @@ const state = {
 
 // --- Audio System ---
 function initAudio() {
+    // 延迟到用户交互时再创建 AudioContext，避免移动端报错
+    if (state.audioCtx) return;
     try {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         state.audioCtx = new AudioContext();
     } catch (e) {
-        console.warn('Web Audio API not supported');
+        console.warn('Web Audio API not supported', e);
     }
 }
 
 function playSound(type) {
     if (!state.audioCtx) return;
     
-    // Create oscillator
-    const osc = state.audioCtx.createOscillator();
-    const gainNode = state.audioCtx.createGain();
+    // 确保 AudioContext 是运行状态
+    if (state.audioCtx.state === 'suspended') {
+        state.audioCtx.resume();
+    }
     
-    osc.connect(gainNode);
-    gainNode.connect(state.audioCtx.destination);
-    
-    const now = state.audioCtx.currentTime;
-    
-    if (type === 'jump') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-        gainNode.gain.setValueAtTime(0.3, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
-    } else if (type === 'collect') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-        gainNode.gain.setValueAtTime(0.3, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-        osc.start(now);
-        osc.stop(now + 0.2);
-    } else if (type === 'superjump') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.linearRampToValueAtTime(800, now + 0.1);
-        osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
-        gainNode.gain.setValueAtTime(0.2, now);
-        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
+    try {
+        // Create oscillator
+        const osc = state.audioCtx.createOscillator();
+        const gainNode = state.audioCtx.createGain();
+        
+        osc.connect(gainNode);
+        gainNode.connect(state.audioCtx.destination);
+        
+        const now = state.audioCtx.currentTime;
+        
+        if (type === 'jump') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'collect') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'superjump') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+            osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+    } catch (e) {
+        console.warn('Error playing sound', e);
     }
 }
 
 // --- Initialization ---
 window.onload = function() {
-    initGame();
+    try {
+        initGame();
+    } catch (e) {
+        console.error("Game Init Failed:", e);
+        alert("游戏加载出错，请刷新重试: " + e.message);
+    }
 };
 
 function initGame() {
     state.canvas = document.getElementById('game-canvas');
+    if (!state.canvas) {
+        console.error("Canvas not found!");
+        return;
+    }
     state.ctx = state.canvas.getContext('2d');
     
-    initAudio(); // 初始化音效系统
-
+    // 不要在 onload 时立即 initAudio()，移到用户点击后再做
+    
     // Handle resize
     window.addEventListener('resize', resize);
     resize();
@@ -137,30 +157,35 @@ function initGame() {
     setupInput();
     
     // Love Timer
-    const start = new Date("2022-01-11");
-    const diff = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
-    const timerDiv = document.createElement('div');
-    timerDiv.style.color = '#FF6B8B';
-    timerDiv.style.fontSize = '18px';
-    timerDiv.style.marginBottom = '20px';
-    timerDiv.innerHTML = `❤️ 已经相爱 <b>${diff}</b> 天 ❤️`;
-    const h1 = document.querySelector('#start-screen h1');
-    if(h1) h1.after(timerDiv);
+    try {
+        const start = new Date("2022-01-11");
+        const diff = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
+        const timerDiv = document.createElement('div');
+        timerDiv.style.color = '#FF6B8B';
+        timerDiv.style.fontSize = '18px';
+        timerDiv.style.marginBottom = '20px';
+        timerDiv.innerHTML = `❤️ 已经相爱 <b>${diff}</b> 天 ❤️`;
+        const h1 = document.querySelector('#start-screen h1');
+        if(h1) h1.after(timerDiv);
+    } catch(e) { console.warn("Timer error", e); }
 
     // UI Buttons
     document.getElementById('game-container').addEventListener('click', (e) => {
+        // Init audio on first user interaction
+        initAudio();
+        
         // If clicking UI buttons, let them handle it
         if (e.target.tagName === 'BUTTON') return;
         
         // If in menu, start game
         const startScreen = document.getElementById('start-screen');
-        if (startScreen.style.display !== 'none') {
+        if (startScreen && startScreen.style.display !== 'none') {
             startGame();
             // Try to play BGM on first interaction
             const bgm = document.getElementById('bgm');
             if (bgm) {
                 bgm.volume = 0.5;
-                bgm.play().catch(e => console.log("Auto-play prevented"));
+                bgm.play().catch(e => console.log("Auto-play prevented", e));
             }
             
             // Resume AudioContext if suspended
