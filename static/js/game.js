@@ -130,14 +130,15 @@ function playSound(type) {
     }
 }
 
-// --- Wish System ---
+// --- Wish System (Aurora Meteor Shower) ---
 const wishes = [];
 const STAR_CANVAS = {
     el: null,
     ctx: null,
     width: 0,
     height: 0,
-    stars: []
+    meteors: [],
+    auroraOffset: 0
 };
 
 function initWishes() {
@@ -149,7 +150,7 @@ function initWishes() {
         }
     } catch(e) {}
     
-    // 2. Add Default Wishes (彩蛋：你的诗句)
+    // 2. Add Default Wishes
     if (wishes.length === 0) {
         const defaults = [
             { text: "在天愿作比翼鸟，在地愿为连理枝", date: "2023-05-20", t: 1684512000000 },
@@ -181,33 +182,43 @@ function initWishes() {
     // 4. Bind Events
     document.getElementById('wish-btn').addEventListener('click', makeWish);
     
-    // 动态控制星空层的点击穿透
-    STAR_CANVAS.el.addEventListener('click', handleStarClick);
+    // 动态控制星空层的点击穿透 (交互优化：任意点击捕获流星)
+    STAR_CANVAS.el.addEventListener('click', handleMeteorClick);
     
     // 5. Start Animation Loop
-    requestAnimationFrame(renderStars);
+    requestAnimationFrame(renderMeteors);
 }
 
 function resizeStarCanvas() {
     STAR_CANVAS.width = STAR_CANVAS.el.width = window.innerWidth;
     STAR_CANVAS.height = STAR_CANVAS.el.height = window.innerHeight;
-    initStars();
+    initMeteors();
 }
 
-function initStars() {
-    STAR_CANVAS.stars = [];
-    wishes.forEach(w => {
-        const isNew = (Date.now() - (w.t || 0)) < 24 * 60 * 60 * 1000;
-        STAR_CANVAS.stars.push({
-            x: Math.random() * STAR_CANVAS.width,
-            y: Math.random() * (STAR_CANVAS.height * 0.6), // 只在上半部分
-            size: isNew ? Math.random() * 4 + 4 : Math.random() * 2 + 1,
-            color: isNew ? '#FFD700' : '#FFF', // 新星金色，旧星白色
-            blinkSpeed: isNew ? 0.1 : 0.02,
-            blinkOffset: Math.random() * Math.PI * 2,
-            data: w,
-            isNew: isNew
-        });
+function initMeteors() {
+    STAR_CANVAS.meteors = [];
+    // 为每个愿望创建一个流星对象
+    wishes.forEach((w, index) => {
+        createMeteor(w, index * 200); // 错开生成时间
+    });
+}
+
+function createMeteor(data, delay = 0) {
+    const isNew = (Date.now() - (data.t || 0)) < 24 * 60 * 60 * 1000;
+    const speedBase = Math.random() * 2 + 1; // 速度
+    
+    STAR_CANVAS.meteors.push({
+        x: Math.random() * STAR_CANVAS.width + STAR_CANVAS.width * 0.5, // 从右侧偏上开始
+        y: Math.random() * STAR_CANVAS.height * 0.5 - 200,
+        vx: -speedBase * 2, // 向左
+        vy: speedBase,      // 向下
+        length: Math.random() * 80 + 50, // 拖尾长度
+        size: isNew ? 3 : 2,
+        color: isNew ? {r:255, g:215, b:0} : {r:255, g:192, b:203}, // 金色或粉色
+        alpha: Math.random() * 0.5 + 0.5,
+        delay: delay,
+        data: data,
+        active: false // 等待延迟
     });
 }
 
@@ -226,72 +237,101 @@ function makeWish() {
     wishes.push(wish);
     localStorage.setItem('love_wishes', JSON.stringify(wishes));
     
-    // Animation: Create a shooting star (simplified by re-init)
-    initStars();
+    // Create a new meteor immediately
+    createMeteor(wish, 0);
     
     // Feedback
     input.value = '';
-    alert("许愿成功！它已经变成了一颗星星 ✨");
-    playSound('collect'); // 复用音效
+    alert("许愿成功！看，它变成流星划过夜空了 ✨");
+    playSound('collect'); 
 }
 
-function renderStars() {
+function renderMeteors() {
     const ctx = STAR_CANVAS.ctx;
     const w = STAR_CANVAS.width;
     const h = STAR_CANVAS.height;
     
     ctx.clearRect(0, 0, w, h);
     
-    // Only render when game over screen is visible (to save performance)
     const gameOverScreen = document.getElementById('game-over-screen');
     if (!gameOverScreen || gameOverScreen.style.display === 'none') {
-        STAR_CANVAS.el.style.pointerEvents = 'none'; // 游戏进行中，禁止拦截点击
-        requestAnimationFrame(renderStars);
+        STAR_CANVAS.el.style.pointerEvents = 'none'; 
+        requestAnimationFrame(renderMeteors);
         return;
     }
     
-    STAR_CANVAS.el.style.pointerEvents = 'auto'; // 游戏结束，允许点击星星
+    // Allow clicking to catch meteors
+    STAR_CANVAS.el.style.pointerEvents = 'auto'; // 这里为了方便全屏点击捕获流星，改为auto，但要注意层级
+    // 注意：CSS中我们将ui-layer置顶了，所以这里auto不会挡住按钮，只会挡住空白处
     
-    const time = Date.now() / 1000;
-    
-    STAR_CANVAS.stars.forEach(s => {
-        ctx.globalAlpha = 0.5 + Math.sin(time * s.blinkSpeed * 10 + s.blinkOffset) * 0.5;
-        ctx.fillStyle = s.color;
-        
-        ctx.beginPath();
-        if (s.isNew) {
-            // Draw Star Shape for new wishes
-            for(let i=0; i<5; i++) {
-                ctx.lineTo(Math.cos((18+i*72)/180*Math.PI)*s.size + s.x,
-                           -Math.sin((18+i*72)/180*Math.PI)*s.size + s.y);
-                ctx.lineTo(Math.cos((54+i*72)/180*Math.PI)*(s.size/2) + s.x,
-                           -Math.sin((54+i*72)/180*Math.PI)*(s.size/2) + s.y);
-            }
-        } else {
-            // Simple circle for old wishes
-            ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+    // 1. Draw Aurora (极光背景)
+    STAR_CANVAS.auroraOffset += 0.005;
+    const gradient = ctx.createLinearGradient(0, 0, w, h);
+    // 极光色：深蓝 -> 紫 -> 绿 -> 深蓝
+    gradient.addColorStop(0, "rgba(25, 25, 112, 0.2)");
+    gradient.addColorStop(0.3 + Math.sin(STAR_CANVAS.auroraOffset)*0.1, "rgba(75, 0, 130, 0.3)");
+    gradient.addColorStop(0.6 + Math.cos(STAR_CANVAS.auroraOffset)*0.1, "rgba(0, 255, 127, 0.1)");
+    gradient.addColorStop(1, "rgba(25, 25, 112, 0.2)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, w, h);
+
+    // 2. Draw Meteors
+    STAR_CANVAS.meteors.forEach(m => {
+        if (m.delay > 0) {
+            m.delay -= 16; // approx 60fps
+            return;
         }
+        
+        // Move
+        m.x += m.vx;
+        m.y += m.vy;
+        
+        // Reset if out of bounds (Loop)
+        if (m.x < -m.length || m.y > h + m.length) {
+            m.x = Math.random() * w + w * 0.2; // 从右侧重新进入
+            m.y = Math.random() * h * 0.5 - 100;
+            m.active = true;
+        }
+        
+        // Draw Trail (Gradient)
+        const trailGrad = ctx.createLinearGradient(m.x, m.y, m.x - m.vx*10, m.y - m.vy*10); // 修正拖尾方向
+        const c = m.color;
+        trailGrad.addColorStop(0, `rgba(${c.r}, ${c.g}, ${c.b}, ${m.alpha})`);
+        trailGrad.addColorStop(1, `rgba(${c.r}, ${c.g}, ${c.b}, 0)`);
+        
+        ctx.lineWidth = m.size;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = trailGrad;
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y);
+        ctx.lineTo(m.x - m.vx * (m.length/5), m.y - m.vy * (m.length/5)); // 拖尾长度
+        ctx.stroke();
+        
+        // Draw Head (Bright dot)
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.size/2, 0, Math.PI*2);
         ctx.fill();
     });
-    ctx.globalAlpha = 1;
     
-    requestAnimationFrame(renderStars);
+    requestAnimationFrame(renderMeteors);
 }
 
-function handleStarClick(e) {
-    const rect = STAR_CANVAS.el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+function handleMeteorClick(e) {
+    // 交互优化：点击任意空白处（没点到按钮），随机捕捉一颗屏幕内的流星
+    // 避免点到按钮也被触发：通过 e.target 判断
+    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+
+    const visibleMeteors = STAR_CANVAS.meteors.filter(m => 
+        m.x > 0 && m.x < STAR_CANVAS.width && 
+        m.y > 0 && m.y < STAR_CANVAS.height &&
+        m.delay <= 0
+    );
     
-    // Find clicked star
-    const clicked = STAR_CANVAS.stars.find(s => {
-        const dx = x - s.x;
-        const dy = y - s.y;
-        return (dx*dx + dy*dy) < (s.size * s.size * 4 + 100); // 增加点击判定范围
-    });
-    
-    if (clicked) {
-        showStarPopup(clicked.x, clicked.y, clicked.data);
+    if (visibleMeteors.length > 0) {
+        // 随机选一颗展示
+        const luckyMeteor = visibleMeteors[Math.floor(Math.random() * visibleMeteors.length)];
+        showStarPopup(e.clientX, e.clientY, luckyMeteor.data); // 在点击位置弹出
     }
 }
 
@@ -302,7 +342,11 @@ function showStarPopup(x, y, data) {
     
     const div = document.createElement('div');
     div.className = 'star-popup';
-    div.style.left = x + 'px';
+    // 确保弹窗在屏幕内
+    const screenW = window.innerWidth;
+    const finalX = Math.min(x, screenW - 260); // 防止右侧溢出
+    
+    div.style.left = finalX + 'px';
     div.style.top = y + 'px';
     div.innerHTML = `
         <span class="date">${data.date}</span>
@@ -311,11 +355,11 @@ function showStarPopup(x, y, data) {
     
     document.body.appendChild(div);
     
-    // Auto remove
+    // Auto remove longer for reading
     setTimeout(() => {
         div.style.opacity = '0';
         setTimeout(() => div.remove(), 500);
-    }, 3000);
+    }, 4000);
 }
 
 // --- Initialization ---
@@ -326,6 +370,14 @@ window.onload = function() {
         console.error("Game Init Failed:", e);
         alert("游戏加载出错，请刷新重试: " + e.message);
     }
+    
+    // 监听全局点击事件来检测是否点到了星星
+    document.addEventListener('click', function(e) {
+        const gameOverScreen = document.getElementById('game-over-screen');
+        if (gameOverScreen && gameOverScreen.style.display !== 'none') {
+            handleStarClick(e);
+        }
+    });
 };
 
 function initGame() {
@@ -459,6 +511,9 @@ function resize() {
 function setupInput() {
     // Keyboard
     window.addEventListener('keydown', (e) => {
+        // Prevent game input when typing in wish box
+        if (e.target.tagName === 'INPUT') return;
+
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') state.input.left = true;
         if (e.code === 'ArrowRight' || e.code === 'KeyD') state.input.right = true;
         if (e.code === 'Space' && !state.isRunning) startGame();
@@ -613,6 +668,11 @@ function update(dt) {
         p.vx *= 0.9; // Friction
     }
     
+    // Prevent spacebar from triggering game logic if focused on input
+    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+        return;
+    }
+
     p.x += p.vx * dt;
     
     // Screen wrapping
