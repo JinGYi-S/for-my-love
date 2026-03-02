@@ -36,6 +36,7 @@ canvas {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    z-index: 100; /* Ensure UI is always on top of stars */
 }
 
 #score-board {
