@@ -3,6 +3,7 @@ import socketserver
 import webbrowser
 import os
 import re
+1
 
 PORT = 8000
 GAME_JS_PATH = os.path.join("static", "js", "game.js")
