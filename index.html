@@ -16,14 +16,33 @@
                 <p>点击或按空格开始</p>
                 <p class="instruction">左右移动接住爱心，躲避乌云</p>
                 <p class="instruction" style="font-size: 12px; margin-top: 5px;">🎵 建议佩戴耳机体验最佳音效</p>
+                
+                <!-- 角色定制 -->
+                <div class="custom-avatar-container">
+                    <label for="avatar-upload" class="avatar-label">
+                        <span id="avatar-preview">👼</span>
+                        <div class="upload-hint">点我换头像</div>
+                    </label>
+                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                </div>
             </div>
             <div id="game-over-screen" style="display: none;">
                 <h1>这里是终点吗？</h1>
                 <p>不，爱没有终点</p>
                 <p>最终高度: <span id="final-score">0</span> m</p>
+                
+                <!-- 许愿池 -->
+                <div class="wish-container">
+                    <input type="text" id="wish-input" placeholder="写下你的心愿..." maxlength="20">
+                    <button id="wish-btn">许愿 ✨</button>
+                </div>
+                
                 <button id="restart-btn">再次起飞</button>
             </div>
         </div>
+        
+        <!-- 星空许愿画布 -->
+        <canvas id="star-canvas" style="position: absolute; top: 0; left: 0; pointer-events: auto; z-index: 50;"></canvas>
         <!-- 背景音乐播放器 -->
         <audio id="bgm" loop>
             <source src="bgm.mp3" type="audio/mpeg">
